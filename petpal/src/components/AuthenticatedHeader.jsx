@@ -1,4 +1,4 @@
-export default function AuthenticatedHeader({ onNavigate, userType }) {
+export default function AuthenticatedHeader({ onNavigate, userType, onLogout }) {
   return (
     <header className="site-header">
       <div className="container header-inner">
@@ -14,6 +14,9 @@ export default function AuthenticatedHeader({ onNavigate, userType }) {
           <a onClick={() => onNavigate(userType)} className="nav-item">
             <span className="emoji">📊</span> Dashboard
           </a>
+          <a onClick={() => onNavigate("sitters")} className="nav-item">
+            <span className="emoji">🐾</span> Sitters
+          </a>
           <a onClick={() => onNavigate("bookings")} className="nav-item">
             <span className="emoji">📅</span> Réservations
           </a>
@@ -26,7 +29,7 @@ export default function AuthenticatedHeader({ onNavigate, userType }) {
           <a onClick={() => onNavigate("profile")} className="nav-item">
             <span className="emoji">👤</span> Mon Profil
           </a>
-          <a onClick={() => onNavigate("home")} className="nav-item">
+          <a onClick={onLogout} className="nav-item">
             <span className="emoji">🚪</span> Déconnexion
           </a>
         </nav>

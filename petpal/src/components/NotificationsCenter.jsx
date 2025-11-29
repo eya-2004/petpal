@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const NotificationsCenter = ({ onNavigate, userType = 'sitter' }) => {
+const NotificationsCenter = ({ onNavigate, userType = 'sitter', notifications, setNotifications }) => {
   const [activeTab, setActiveTab] = useState('all');
 
   // Different notifications for Owners vs Sitters
@@ -130,31 +130,47 @@ const NotificationsCenter = ({ onNavigate, userType = 'sitter' }) => {
     }
   ];
 
+  // Initialize notifications if empty
+  React.useEffect(() => {
+    if (notifications.length === 0) {
+      const initialNotifications = userType === 'owner' ? ownerNotifications : sitterNotifications;
+      setNotifications(initialNotifications);
+    }
+  }, [notifications.length, userType, setNotifications]);
+
   // Select notifications based on user type
-  const notifications = userType === 'owner' ? ownerNotifications : sitterNotifications;
+  const baseNotifications = userType === 'owner' ? ownerNotifications : sitterNotifications;
 
   const tabs = [
-    { id: 'all', label: 'Toutes', count: notifications.length },
-    { id: 'booking', label: 'Réservations', count: notifications.filter(n => n.type === 'booking').length },
-    { id: 'message', label: 'Messages', count: notifications.filter(n => n.type === 'message').length },
-    { id: 'payment', label: 'Paiements', count: notifications.filter(n => n.type === 'payment').length },
-    { id: 'system', label: 'Système', count: notifications.filter(n => n.type === 'system').length },
-    { id: 'reminder', label: 'Rappels', count: notifications.filter(n => n.type === 'reminder').length }
+    { id: 'all', label: 'Toutes', count: baseNotifications.length },
+    { id: 'booking', label: 'Réservations', count: baseNotifications.filter(n => n.type === 'booking').length },
+    { id: 'message', label: 'Messages', count: baseNotifications.filter(n => n.type === 'message').length },
+    { id: 'payment', label: 'Paiements', count: baseNotifications.filter(n => n.type === 'payment').length },
+    { id: 'system', label: 'Système', count: baseNotifications.filter(n => n.type === 'system').length },
+    { id: 'reminder', label: 'Rappels', count: baseNotifications.filter(n => n.type === 'reminder').length }
   ];
 
   const markAllAsRead = () => {
-    // In a real app, you would update the state to mark all as read
-    alert('Toutes les notifications ont été marquées comme lues');
+    const updatedNotifications = notifications.map(notif => ({
+      ...notif,
+      unread: false
+    }));
+    setNotifications(updatedNotifications);
   };
 
   const markAsRead = (id) => {
-    // In a real app, you would update the specific notification
-    console.log(`Notification ${id} marquée comme lue`);
+    const updatedNotifications = notifications.map(notif => {
+      if (notif.id === id) {
+        return { ...notif, unread: false };
+      }
+      return notif;
+    });
+    setNotifications(updatedNotifications);
   };
 
   const deleteNotification = (id) => {
-    // In a real app, you would remove the notification from state
-    console.log(`Notification ${id} supprimée`);
+    const updatedNotifications = notifications.filter(notif => notif.id !== id);
+    setNotifications(updatedNotifications);
   };
 
   const filteredNotifications = activeTab === 'all' 

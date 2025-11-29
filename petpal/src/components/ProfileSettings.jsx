@@ -1,14 +1,93 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
-const ProfileSettings = ({ onNavigate }) => {
-  const [notifications, setNotifications] = useState({
-    email: true,
-    push: false,
-    sms: true,
-    bookings: true,
-    messages: true,
-    promotions: false
+const ProfileSettings = ({ onNavigate, user, profile, setProfile }) => {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    language: 'Français',
+    currency: 'EUR (€)',
+    notifications: {
+      email: true,
+      push: false,
+      sms: true,
+      bookings: true,
+      messages: true,
+      promotions: false
+    }
   });
+
+  // Initialiser le formulaire avec les données de l'utilisateur
+  useEffect(() => {
+    if (user) {
+      const [firstName, lastName] = user.name.split(' ');
+      setFormData(prev => ({
+        ...prev,
+        firstName: firstName || '',
+        lastName: lastName || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        ...profile
+      }));
+    }
+  }, [user, profile]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleNotificationChange = (key) => {
+    setFormData(prev => ({
+      ...prev,
+      notifications: {
+        ...prev.notifications,
+        [key]: !prev.notifications[key]
+      }
+    }));
+  };
+
+  const handleSaveProfile = () => {
+    // Sauvegarder les modifications du profil
+    const updatedProfile = {
+      ...profile,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
+      language: formData.language,
+      currency: formData.currency,
+      notifications: formData.notifications
+    };
+    
+    setProfile(updatedProfile);
+    
+    // Mettre à jour les informations de l'utilisateur si nécessaire
+    if (user) {
+      const updatedUser = {
+        ...user,
+        name: `${formData.firstName} ${formData.lastName}`,
+        email: formData.email,
+        phone: formData.phone
+      };
+      
+      // Mettre à jour l'utilisateur dans le localStorage
+      const users = JSON.parse(localStorage.getItem('petpal_users') || '[]');
+      const updatedUsers = users.map(u => 
+        u.id === user.id ? updatedUser : u
+      );
+      localStorage.setItem('petpal_users', JSON.stringify(updatedUsers));
+      
+      // Mettre à jour l'état de l'utilisateur dans App.js via une fonction de rappel
+      // Nous devons ajouter cette fonctionnalité
+    }
+    
+    alert('Profil sauvegardé avec succès!');
+  };
 
   const ToggleSwitch = ({ checked, onChange }) => (
     <label className="toggle-switch">
@@ -31,7 +110,7 @@ const ProfileSettings = ({ onNavigate }) => {
             ← Retour
           </button>
           <h1 className="profile-title">Mon Profil</h1>
-          <button className="save-button">
+          <button className="save-button" onClick={handleSaveProfile}>
             💾 Sauvegarder
           </button>
         </div>
@@ -42,7 +121,7 @@ const ProfileSettings = ({ onNavigate }) => {
         <div className="profile-photo-section">
           <div className="profile-photo-container">
             <div className="profile-photo">
-              👤
+              {user?.avatar || '👤'}
             </div>
             <button className="photo-edit-button">
               📷
@@ -62,8 +141,11 @@ const ProfileSettings = ({ onNavigate }) => {
             <label className="form-label">Prénom</label>
             <input 
               type="text" 
-              defaultValue="Marie" 
+              name="firstName"
+              value={formData.firstName}
+              onChange={handleInputChange}
               className="form-input"
+              placeholder="Votre prénom"
             />
           </div>
 
@@ -71,8 +153,11 @@ const ProfileSettings = ({ onNavigate }) => {
             <label className="form-label">Nom</label>
             <input 
               type="text" 
-              defaultValue="Durand" 
+              name="lastName"
+              value={formData.lastName}
+              onChange={handleInputChange}
               className="form-input"
+              placeholder="Votre nom"
             />
           </div>
 
@@ -81,8 +166,11 @@ const ProfileSettings = ({ onNavigate }) => {
             <div className="input-with-badge">
               <input 
                 type="email" 
-                defaultValue="marie@email.com" 
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
                 className="form-input"
+                placeholder="Votre adresse e-mail"
               />
               <span className="verified-badge">✓ Vérifié</span>
             </div>
@@ -92,8 +180,11 @@ const ProfileSettings = ({ onNavigate }) => {
             <label className="form-label">Numéro de téléphone</label>
             <input 
               type="tel" 
-              defaultValue="+216 XX XXX XXX" 
+              name="phone"
+              value={formData.phone}
+              onChange={handleInputChange}
               className="form-input"
+              placeholder="Votre numéro de téléphone"
             />
           </div>
         </div>
@@ -134,7 +225,12 @@ const ProfileSettings = ({ onNavigate }) => {
           
           <div className="form-group">
             <label className="form-label">Langue 🌐</label>
-            <select className="form-input">
+            <select 
+              name="language"
+              value={formData.language}
+              onChange={handleInputChange}
+              className="form-input"
+            >
               <option>Français</option>
               <option>English</option>
               <option>العربية</option>
@@ -143,7 +239,12 @@ const ProfileSettings = ({ onNavigate }) => {
 
           <div className="form-group">
             <label className="form-label">Devise 💰</label>
-            <select className="form-input">
+            <select 
+              name="currency"
+              value={formData.currency}
+              onChange={handleInputChange}
+              className="form-input"
+            >
               <option>EUR (€)</option>
               <option>USD ($)</option>
               <option>TND (د.ت)</option>
@@ -169,8 +270,8 @@ const ProfileSettings = ({ onNavigate }) => {
             <div key={key} className="setting-item">
               <span className="notification-label">{label}</span>
               <ToggleSwitch 
-                checked={notifications[key]}
-                onChange={() => setNotifications({...notifications, [key]: !notifications[key]})}
+                checked={formData.notifications[key]}
+                onChange={() => handleNotificationChange(key)}
               />
             </div>
           ))}
@@ -178,7 +279,7 @@ const ProfileSettings = ({ onNavigate }) => {
 
         {/* Actions */}
         <div className="actions-section">
-          <button className="btn-logout">
+          <button className="btn-logout" onClick={() => onNavigate('home')}>
             <span className="btn-icon">🚪</span>
             Se déconnecter
           </button>

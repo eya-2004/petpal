@@ -1,16 +1,54 @@
 import { Form, Button } from "react-bootstrap";
 import { useState } from "react";
+import AuthService from "./AuthService";
 
-export default function Login({ onNavigate }) {
-  const [userType, setUserType] = useState("owner"); // "owner" or "sitter"
+export default function Login({ onNavigate, onLogin }) {
+  const [userType, setUserType] = useState("owner");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    
+    try {
+      // Vérifier les identifiants
+      const user = AuthService.login(email, password);
+      
+      // Vérifier que le type d'utilisateur correspond
+      if (user.type !== userType) {
+        throw new Error(`Ce compte est de type ${user.type === 'owner' ? 'propriétaire' : 'pet sitter'}`);
+      }
+      
+      // Appeler la fonction de connexion du parent
+      onLogin(user, userType);
+      
+      // Naviguer vers le tableau de bord approprié
+      onNavigate(userType);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="page-container">
+    <div className="auth-container">
       <div className="auth-card">
+        <div className="auth-header">
+          <div className="auth-icon">🔒</div>
+          <h2 className="auth-title">Connexion</h2>
+          <p className="auth-subtitle">Bienvenue sur PetPal</p>
+        </div>
 
-        <div className="avatar-floating">🔒</div>
-
-        <h2>Connexion</h2>
+        {error && (
+          <div className="auth-error">
+            {error}
+          </div>
+        )}
 
         {/* User Type Selection */}
         <div className="user-type-selection">
@@ -30,24 +68,54 @@ export default function Login({ onNavigate }) {
           </div>
         </div>
 
-        <Form>
-          <input type="email" placeholder="Adresse e-mail" />
-          <input type="password" placeholder="Mot de passe" />
+        <Form onSubmit={handleLogin} className="auth-form">
+          <div className="form-group">
+            <label className="form-label">Adresse e-mail</label>
+            <div className="input-group">
+              <span className="input-icon">✉️</span>
+              <input 
+                type="email" 
+                className="form-input" 
+                placeholder="votre@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Mot de passe</label>
+            <div className="input-group">
+              <span className="input-icon">🔒</span>
+              <input 
+                type="password" 
+                className="form-input" 
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+          </div>
 
           <Button 
-            className="btn-primary mt-3" 
-            onClick={() => onNavigate(userType)} // Navigate to respective dashboard
+            type="submit"
+            className="btn-primary btn-auth"
+            disabled={loading}
           >
-            Se connecter
+            {loading ? 'Connexion...' : 'Se connecter'}
           </Button>
         </Form>
 
-        <p className="text-center mt-3">
-          Pas encore de compte ?{" "}
-          <span className="link" onClick={() => onNavigate("signup")}>
-            Créer un compte
-          </span>
-        </p>
+        <div className="auth-footer">
+          <p className="auth-footer-text">
+            Pas encore de compte ?{" "}
+            <span className="auth-link" onClick={() => onNavigate("signup")}>
+              Créer un compte
+            </span>
+          </p>
+        </div>
       </div>
     </div>
   );
